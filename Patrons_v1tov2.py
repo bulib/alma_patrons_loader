@@ -1,13 +1,13 @@
-###
-### Convert Patrons file incoming from IS&T in a version 1 schema to a version 2 schema
-### written by J Ammerman
-### October 9, 2015
-###
+"""
+Patrons file incoming from IS&T in a version 1 schema to a version 2 schema
+  written by J Ammerman [jwacooks] (2015-10-09)
+  edited by A Sawyer [atla5] (2019-09-04)
+"""
 
 # coding: utf-8
 # requires python 3.x
 
-## load required modules
+# load required modules
 import codecs
 import os
 import xml.etree.ElementTree as ET
@@ -16,6 +16,15 @@ from zipfile import ZipFile
 from xml.dom import minidom
 import csv
 
+
+# variables
+DEFAULT_XML_ENCODING = "Windows-1252"  # should be encoded in the first line of the xml
+EXTRANEOUS_XML_LINE = 'xmlns:use="http://com/exlibris/digitool/repository/extsystem/xmlbeans" xsi:schemaLocation="http://com/exlibris/digitool/repository/extsystem/xmlbeans user_012513.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
+SYM_BEL = '\u0007'  # https://unicode.org/cldr/utility/character.jsp?a=0007
+SYM_SYN = '\u0016'  # https://unicode.org/cldr/utility/character.jsp?a=0016
+SYM_SUB = '\u001a'  # https://unicode.org/cldr/utility/character.jsp?a=001a
+
+
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
     """
@@ -23,7 +32,8 @@ def prettify(elem):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
-def add_user_details(u,user):
+
+def add_user_details(u, user):
     u_dict = {}
     u_dict['recordType'] = 'record_type'
     u_dict['userName'] = 'primary_id'
@@ -38,17 +48,15 @@ def add_user_details(u,user):
     u_dict['userTitle'] = 'user_title'
     u_dict['defaultLanguage'] = 'preferred_language'
     full_name = ET.SubElement(user,'full_name')
+    fname = mname = lname = ''  # initialize each name part to empty string
     for i in u.findall('userDetails'):
         for d in i:
             if d.tag == 'firstName':
-                fname = d.text
+                fname = d.text if d.text and d.text is not None else ''
             if d.tag == 'middleName':
-                if d.text == None:
-                    mname = ' '
-                else:
-                    mname = ' ' + d.text + ' '
+                mname = ' '+d.text+' ' if d.text and d.text is not None else ' '
             if d.tag == 'lastName':
-                lname = d.text
+                lname = d.text + ' ' if d.text and d.text is not None else ''
             if d.tag in u_dict:
                 d.tag = u_dict[d.tag]
             if d.tag == 'record_type':
@@ -59,32 +67,33 @@ def add_user_details(u,user):
                 d.set('disc',d.text.title())
             if d.tag == 'expiry_date' or d.tag == 'purge_date':
                 date = d.text
-                d.text = date[:4] + '-'+ date[4:6] + '-' + date[-2:] + 'Z'
-            e = ET.SubElement(user,d.tag)
+                d.text = '{}-{}-{}Z'.format(date[:4], date[4:6], date[-2:])
+            e = ET.SubElement(user, d.tag)
             e.text = d.text
             if e.tag == 'user_group':
-                e.set('desc',user_groups[e.text])
-        name = fname + mname + lname
-        full_name.text = name
-        #print(name)
+                e.set('desc', user_groups[e.text])
+    name = fname + mname + lname
+    full_name.text = name
 
           
-def add_notes(u,user):
+def add_notes(u, user):
     for i in u.findall('userNoteList'):
         for d in i:
-            e = ET.SubElement(user,d.tag)
+            e = ET.SubElement(user, d.tag)
             e.text = d.text
 
-def add_identifiers(u,user):
+
+def add_identifiers(u, user):
     for i in u.findall('userIdentifiers'):
-        UIs = ET.SubElement(user,'user_identifiers')
+        UIs = ET.SubElement(user, 'user_identifiers')
         for d in i:
-            e = ET.SubElement(UIs,'user_identifier')
+            e = ET.SubElement(UIs, 'user_identifier')
             for child in d:
-                f = ET.SubElement(e,child.tag.replace('type','id_type'))
+                f = ET.SubElement(e,child.tag.replace('type', 'id_type'))
                 f.text = child.text
 
-def add_contacts(u,user):
+
+def add_contacts(u, user):
     u_dict = {}
     u_dict['stateProvince'] = 'state_province'
     u_dict['addressNote'] = 'address_note'
@@ -124,7 +133,7 @@ def add_contacts(u,user):
                             child.tag = u_dict[child.tag]
                         f = ET.SubElement(address,child.tag)
                         f.text = child.text
-                        if f.tag == 'line1' and f.text == None:
+                        if f.tag == 'line1' and f.text is None:
                             addresses.remove(address)
                             break
             if d.tag == 'userPhone':
@@ -153,21 +162,21 @@ def add_contacts(u,user):
                             child.tag = u_dict[child.tag]
                         f = ET.SubElement(phone,child.tag)
                         f.text = child.text
-                        if f.text == None:
+                        if f.text is None:
                             phones.remove(phone)
                             #print('No Phone')
             if d.tag == 'userEmail':
                 pass
-                email = ET.SubElement(emails,'email')
-                email.set('segment_type','External')
-                email.set('preferred','true')
+                email = ET.SubElement(emails, 'email')
+                email.set('segment_type', 'External')
+                email.set('preferred', 'true')
                 for child in d:
                     if child.tag == 'segmentAction':
                         pass
                     elif child.tag == 'types':
-                        email_types = ET.SubElement(email,'email_types') 
+                        email_types = ET.SubElement(email, 'email_types')
                         for x in child.findall('userEmailTypes'):
-                            email_type = ET.SubElement(email_types,'email_type')
+                            email_type = ET.SubElement(email_types, 'email_type')
                             email_type.text = x.text
                             if x.text == 'office':
                                 email_type.set('desc', 'Office')
@@ -182,48 +191,49 @@ def add_contacts(u,user):
                             child.tag = u_dict[child.tag]
                         f = ET.SubElement(email,child.tag)
                         f.text = child.text  
-                        if f.text == None:
+                        if f.text is None:
                             p_id = user.find('primary_id')
                             f.text = p_id.text+'@bu.edu'
                             #print(p_id.text+'@bu.edu')
                         
 
+if __name__ == "__main__":
+    #os.chdir('/Volumes/jwa_drive1/git/patrons')
+    file_list = glob.glob('patrons*.xml')
 
-#os.chdir('/Volumes/jwa_drive1/git/patrons')
-file_list = glob.glob('patrons*.xml')
-##
-## Here we get the list of user group codes and descriptions to read into a dictionary
-## to enhance the records with the description
-reader = csv.DictReader(open('user_groups.csv'))
-user_groups = {}
-for row in reader:
-    key = row.pop('Code')
-    if key in user_groups:
-        # implement your duplicate row handling here
-        pass
-    user_groups[key] = row['Description']
+    """get the list of user group codes and descriptions to read into a to enhance the records with the description"""
+    reader = csv.DictReader(open('user_groups.csv'))
+    user_groups = {}
+    for row in reader:
+        key = row.pop('Code')
+        if key in user_groups:
+            # implement your duplicate row handling here
+            pass
+        user_groups[key] = row['Description']
 
-for f in file_list:
-    out_file = codecs.open('prep_'+ f[8:],'w','utf-8')
-    users = ET.Element('users')
-    xml_str = codecs.open(f,'rb', 'Windows-1252').read()
-    xml_str = xml_str.replace('\u0007','').replace('\u001a','').replace('\u0016','')
-    xml_str = xml_str.replace('use:','').replace('xmlns:use="http://com/exlibris/digitool/repository/extsystem/xmlbeans" xsi:schemaLocation="http://com/exlibris/digitool/repository/extsystem/xmlbeans user_012513.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"','')
-    root = ET.fromstring(xml_str)
-    for child in root:
-        user = ET.SubElement(users, 'user')
-        add_user_details(child,user)
-        #add_notes(child,user)
-        add_identifiers(child,user)
-        add_contacts(child,user)
+    for f in file_list:
+        # create an empty file to write to
+        out_file = codecs.open('prep_' + f[len("patrons_"):], 'w', 'utf-8')
+        users = ET.Element('users')
+        xml_str = codecs.open(f, 'rb', DEFAULT_XML_ENCODING).read()
+        xml_str = xml_str.replace(SYM_BEL, '').replace(SYM_SUB, '').replace(SYM_SYN, '')
+        xml_str = xml_str.replace('use:', '').replace(EXTRANEOUS_XML_LINE, '')
+        root = ET.fromstring(xml_str)
+        for child in root:
+            user = ET.SubElement(users, 'user')
+            add_user_details(child, user)
+            #add_notes(child,user)
+            add_identifiers(child, user)
+            add_contacts(child, user)
 
-    out_file.write(prettify(users))
-    out_file.close()
-        
-file_list = glob.glob('prep*.xml')
-for f in file_list:
-    with ZipFile('patrons.zip','a') as myzip:
-        myzip.write(f)
-myzip.close()
+        out_file.write(prettify(users))
+        out_file.close()
+
+    file_list = glob.glob('prep*.xml')
+    with ZipFile('patrons.zip', 'a') as myzip:
+        for f in file_list:
+            myzip.write(f)
+    myzip.close()
+
 
 

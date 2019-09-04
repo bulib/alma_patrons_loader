@@ -1,0 +1,66 @@
+Code,Description
+0,Undergraduate Student
+999,Migration problem
+2,Graduate School Student
+3,Theology School Student
+4,Law Student
+5,"Faculty Member, Regular"
+6,Theology Faculty
+7,Law Faculty
+8,Staff
+9,Executive Office
+10,Other
+11,"Visitor, Mugar Library"
+12,"Visitor, Law Prof. Privs."
+13,"Visitor, Theology"
+14,Medical Library Patron
+15,"Visitor, Educational Resources"
+16,"Visitor, Law, Student Privs."
+17,Interlibrary Loan
+18,"Visitor, Science\Engineering"
+19,TA/TF/LECT GRAD STU
+20,Bindery
+21,CGS FACULTY
+22,CELOP FACULTY
+23,CLA/GRS FACULTY
+24,COM FACULTY
+25,ENGINEERING FACULTY
+26,MEDICAL SCHOOL FACULTY
+27,MET FACULTY
+28,SARGENT FACULTY
+29,EDUCATION FACULTY
+30,SFA FACULTY
+31,GRADUATE DENTISTRY FACULTY
+32,MANAGEMENT FACULTY
+33,SOCIAL WORK FACULTY
+34,UNIVERSITY PROFESSOR
+35,ALUMNI
+36,DO NOT USE old consortium
+37,SPECIAL NEEDS
+38,CARREL LOAN
+39,Rush Bindery
+40,GEDDES SPECIAL
+41,City Hospital
+42,University Hospital
+43,BU Academy
+44,Temp Fac Appt
+45,2bPurged
+46,fwtest
+47,BU Academy Faculty
+48,Fuller [DON'T USE] STORAGE
+49,Summer Temp. Students
+50,BLC-Undergraduate
+51,BLC-Graduate
+52,BLC-Faculty/Staff
+53,"BLC-Other(BPL,STATE)"
+54,F/S taking classes
+55,Pardee Visitor
+56,BLC INSTITUTIONAL PATRON
+57," staff member, library"
+58,SPH faculty
+59,picklist
+60,"Staff Member, Law Library"
+61,EDUCATION preschool parents
+1,"Graduate Student, Regular"
+sysadmin,sysadmin
+62,Law Journal Office
