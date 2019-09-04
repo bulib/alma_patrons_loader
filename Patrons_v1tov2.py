@@ -16,12 +16,14 @@ from zipfile import ZipFile
 from xml.dom import minidom
 import csv
 
+
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
     """
     rough_string = ET.tostring(elem, 'utf-8')
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
+
 
 def add_user_details(u,user):
     u_dict = {}
@@ -38,17 +40,15 @@ def add_user_details(u,user):
     u_dict['userTitle'] = 'user_title'
     u_dict['defaultLanguage'] = 'preferred_language'
     full_name = ET.SubElement(user,'full_name')
+    fname = mname = lname = ''  # initialize each name part to empty string
     for i in u.findall('userDetails'):
         for d in i:
             if d.tag == 'firstName':
-                fname = d.text
+                fname = d.text if d.text and d.text is not None else ''
             if d.tag == 'middleName':
-                if d.text == None:
-                    mname = ' '
-                else:
-                    mname = ' ' + d.text + ' '
+                mname = ' '+d.text+' ' if d.text and d.text is not None else ' '
             if d.tag == 'lastName':
-                lname = d.text
+                lname = d.text + ' ' if d.text and d.text is not None else ''
             if d.tag in u_dict:
                 d.tag = u_dict[d.tag]
             if d.tag == 'record_type':
@@ -64,9 +64,8 @@ def add_user_details(u,user):
             e.text = d.text
             if e.tag == 'user_group':
                 e.set('desc',user_groups[e.text])
-        name = fname + mname + lname
-        full_name.text = name
-        #print(name)
+    name = fname + mname + lname
+    full_name.text = name
 
           
 def add_notes(u,user):
@@ -74,6 +73,7 @@ def add_notes(u,user):
         for d in i:
             e = ET.SubElement(user,d.tag)
             e.text = d.text
+
 
 def add_identifiers(u,user):
     for i in u.findall('userIdentifiers'):
@@ -83,6 +83,7 @@ def add_identifiers(u,user):
             for child in d:
                 f = ET.SubElement(e,child.tag.replace('type','id_type'))
                 f.text = child.text
+
 
 def add_contacts(u,user):
     u_dict = {}
@@ -204,7 +205,7 @@ for row in reader:
     user_groups[key] = row['Description']
 
 for f in file_list:
-    out_file = codecs.open('prep_'+ f[8:],'w','utf-8')
+    out_file = codecs.open('prep_'+ f[len("patrons_"):],'w','utf-8')
     users = ET.Element('users')
     xml_str = codecs.open(f,'rb', 'Windows-1252').read()
     xml_str = xml_str.replace('\u0007','').replace('\u001a','').replace('\u0016','')
